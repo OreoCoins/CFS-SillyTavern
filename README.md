@@ -21,6 +21,28 @@ CFS 内含两部分：
 
 ---
 
+## v2.5 新特性（移动端友好 + 救回按钮）
+
+### 📱 一键手动接管按钮
+
+「🛡️ MVU 守护」面板的「v4.x 启动状态」区块现在带**可点击的救回按钮**，专为**手机端用户**（打不开 F12 console）设计：
+
+| 状态 | 按钮 | 作用 |
+|---|---|---|
+| ❌ **接管失败** | 🔧 **一键手动接管**（蓝色显眼）+ 📋 复制 F12 命令 | 立即调 `bootstrapTakeover({force:true})` + toast 反馈结果 |
+| ⏳ **等待会话进入** | ⏳ 立即重试接管（轻量） | 不想等 60s 自动 watchdog 可手动催 |
+| ⏳ **准备中**（异常 fallback） | ⏳ 立即重试接管（轻量） | 异常状态下也允许救回 |
+
+**4 种反馈 toast**：
+- ✅ 成功 → 注入字符数
+- ⏳ 启动门控未放行 → 稍等再点
+- ❌ Mvu 仍不可用 → 提示发到 DC 群 + GitHub issue
+- ❌ 接管异常 → 错误详情
+
+按钮采用 `min-height: 38px` + `padding: 8px 16px` 保证触屏点击区域 ≥ 44pt，符合移动端可用性标准。
+
+---
+
 ## v2.4 新特性（位置锚定 + 共存防御）
 
 ### 🛡️ 主动位置审计（Coordinator audit）
@@ -227,7 +249,8 @@ CFS4.SchemaFrozenLayer.cleanupLegacyEntries();
 | v2.1 | SessionGate 以 `getCurrentChid()` 为主判据 + 多事件名 + eventSource 兜底 |
 | v2.2 | writeSchema 数字 position + verifyAnchors 第 4 锚 + audit + mvu_plot 误判修复 |
 | v2.3 | audit 4 触发点 + console 日志 + F12 手动入口 |
-| **v2.4** | **audit 同步前置（解决"慢一步修复"）+ `worldinfo_updated` 钩 + 3 次延迟扫描 → 命中率突破 97.8%** |
+| v2.4 | audit 同步前置（解决"慢一步修复"）+ `worldinfo_updated` 钩 + 3 次延迟扫描 → 命中率突破 97.8% |
+| **v2.5** | **「🛡️ MVU 守护」面板新增「🔧 一键手动接管」+「📋 复制 F12 命令」按钮 → 手机端用户可一键救回** |
 
 ---
 
