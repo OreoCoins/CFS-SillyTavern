@@ -148,7 +148,7 @@ window.CFS4.FallbackStrategy.recoverToV4({ force: true })
 
 ---
 
-## 工作原理（一段话）
+## 工作原理
 
 预设里的 stat_data 渲染 worldbook entry（含 `{{format_message_variable::stat_data}}` macro）每轮输出当前完整状态（25K 字符 YAML），其中绝大多数字段跨轮不变。v4.x 把它替换为一个动态 entry，内容是：
 - 稳定 path 的 `<STABLE_BATCH schema="..." paths="..."/>` 引用 token（约 141 字符）
