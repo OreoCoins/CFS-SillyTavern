@@ -5,13 +5,13 @@ SillyTavern 用的 prompt cache 优化脚本。包含两个独立部分：
 - **v3.1.7（基线）**：PSIS 提示词结构守护、MVU 接口管理、自动 initvar 生命周期。把无 MVU 优化时常见的 25% 左右命中率拉到 85% 左右。和 MVU stat_data 渲染优化无关，纯靠把世界书 entry 推到 cache prefix 友好的位置实现。
 - **v4.x（StatData Engine）**：把 MVU 每轮变化的 stat_data YAML 渲染（25K 字符上下）替换为跨轮稳定的 STABLE_BATCH 引用 token。在 v3.1.7 的 85% 基础上把命中率推到 95-97%（实测大卡 13 万字符 prompt 上稳态，单次峰值 98%）。
 
-两部分一起装，缺一不可。
+一个插件包含两条优化路径，直接用就行。
 
 ---
 
 ## 安装
 
-1. SillyTavern → 脚本管理 → 导入
+1. SillyTavern → 酒馆助手 → 导入全局脚本
 2. 选 `Cache-Friendly-Scanner.json`
 3. 启用脚本 → F5 刷新酒馆
 
