@@ -248,16 +248,40 @@ CFS4.SchemaFrozenLayer.cleanupLegacyEntries();
 
 ## 版本历史
 
+v4.9.1 起统一三层分级体系：浅度 PSIS / 中度 接管 / 深度 SEM。早期 v2.x 编号已扶正到 v4.x.x。
+
+### 浅度层（PSIS）
+
 | 版本 | 改动 |
 |---|---|
 | v3.1.7 | PSIS + MVU 接口管理 + 自动 initvar 生命周期。基线 25% → 85% |
+
+### 中度层（StatData Engine 接管）
+
+| 版本 | 改动 |
+|---|---|
 | v4.0 | StatData Engine 协议层。85% → 96% 左右 |
-| v2.0 | 微内核重构：SessionGate / Coordinator / NotificationCenter。启动期完全静默 |
-| v2.1 | SessionGate 以 `getCurrentChid()` 为主判据，加多事件名监听 |
-| v2.2 | writeSchema 用数字 position，verifyAnchors 加第 4 锚（位置锚）|
-| v2.3 | audit 4 触发点，加 F12 手动入口 |
-| v2.4 | audit 在 `generate_before_combine_prompts` 内同步前置（修「慢一步」问题）+ `worldinfo_updated` 钩 3 次延迟扫描。命中率稳态 95-97%，峰值 98% |
-| v2.5 | 「MVU 守护」面板加「超时手动接管」按钮，手机端不开 F12 也能救 |
+| v4.8.0 | 微内核重构：SessionGate / Coordinator / NotificationCenter。启动期完全静默（原 v2.0）|
+| v4.8.0.1 | SessionGate 以 `getCurrentChid()` 为主判据，加多事件名监听（原 v2.1）|
+| v4.8.0.2 | writeSchema 用数字 position，verifyAnchors 加第 4 锚（位置锚）（原 v2.2）|
+| v4.8.0.3 | audit 4 触发点，加 F12 手动入口（原 v2.3）|
+| v4.8.0.4 | audit 在 `generate_before_combine_prompts` 内同步前置（修「慢一步」问题）+ `worldinfo_updated` 钩 3 次延迟扫描。命中率稳态 95-97%，峰值 98%（原 v2.4）|
+| v4.8.0.5 | 「MVU 守护」面板加「超时手动接管」按钮，手机端不开 F12 也能救（原 v2.5）|
+| v4.8.0.6 | `_scheduleAuditOnWorldInfoUpdated` 改单 1500ms 防抖，audit 死循环防护（`_auditFailCount` 阈值 3）|
+| v4.8.0.7 | EJS 模板识别（`<status_current_variables>` / `<%= getvar('stat_data') %>` 等），bootstrap Step B 加 EJS fallback 路径 |
+| v4.8.0.8 | TavernHelper position 字符串别名统一（`'at_depth_as_user'` / `'before_character_definition'` 等），verifyAnchors 字符串/数字双兼容 |
+| v4.8.1 | PathRegistry 启动 guard（防第二次 boot 抹掉 641 条 path）+ DYNAMIC entry 锁定。命中率从 25% → 64.9%（接管恢复但仍受 prompt 结构限制）|
+
+### 深度层（SEM）
+
+| 版本 | 改动 |
+|---|---|
+| v4.9.0 | SEM 初版：候选扫描 + 用户授权迁移 + 面板可拖动 + 漂移检测告警。metadata 设计基于 `entry.extensions.cfs.sem`（后证实失败）|
+| v4.9.1 | metadata 改 localStorage（`cfs_sem_migrations_v1`，因 TavernHelper 静默丢弃 extensions 字段）+ 分级状态条 + Legacy「三大块归零」按钮 SEM 启用时自动暂停 + 「已迁移列表」漂移条目整行红字 + 「⚡ 重迁所有漂移」单一入口 + 候选表跳过已迁移条目避免 UX 混乱。命中率 64.9% → 91~92% |
+
+### 下一阶段（v5.0 规划中）
+
+吞掉 WM 的：蓝绿灯检测 / 蓝绿灯建议优化 / 命中率查看。
 
 ---
 
