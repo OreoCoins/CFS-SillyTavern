@@ -1,11 +1,12 @@
 # Cache-Friendly Scanner (CFS)
 
-SillyTavern 用的 prompt cache 优化脚本。包含两个独立部分：
+SillyTavern 用的 prompt cache 优化脚本。三层分级优化：
 
-- **v3.1.7（基线）**：PSIS 提示词结构守护、MVU 接口管理、自动 initvar 生命周期。把无 MVU 优化时常见的 25% 左右命中率拉到 85% 左右。和 MVU stat_data 渲染优化无关，纯靠把世界书 entry 推到 cache prefix 友好的位置实现。
-- **v4.x（StatData Engine）**：把 MVU 每轮变化的 stat_data YAML 渲染（25K 字符上下）替换为跨轮稳定的 STABLE_BATCH 引用 token。在 v3.1.7 的 85% 基础上把命中率推到 95-97%（实测大卡 13 万字符 prompt 上稳态，单次峰值 98%）。
+- **浅度 — PSIS v3.1.7（基线）**：提示词结构守护、MVU 接口管理、自动 initvar 生命周期。把无 MVU 优化时常见的 25% 左右命中率拉到 85% 左右。和 MVU stat_data 渲染优化无关，纯靠把世界书 entry 推到 cache prefix 友好的位置实现。
+- **中度 — 接管 v4.8.1（StatData Engine）**：把 MVU 每轮变化的 stat_data YAML 渲染（25K 字符上下）替换为跨轮稳定的 STABLE_BATCH 引用 token。在浅度的 85% 基础上把命中率推到 95-97%（实测大卡 13 万字符 prompt 上稳态，单次峰值 98%）。
+- **深度 — SEM v4.9.1（Stable Entry Migrator）**：扫描出"稳态但被注入到 user@D0 / at_depth 的大体积 worldbook 条目"，用户授权后迁移到 prefix 区（`before_character_definition + constant=true`），让这些跨轮恒定的规则文本进入 cache prefix。新卡新预设场景下针对性的最后一层榨干。
 
-一个插件包含两条优化路径，直接用就行。
+一个插件包含三层优化路径。浅度 + 中度自动启用，深度用户手动触发（候选扫描 + 勾选 + 二次确认）。
 
 ---
 
@@ -44,6 +45,61 @@ MVU 系统接口管理（N 条；常驻 a / 一次性 b）
 - 等待会话进入 — 还没进角色卡（welcome screen 正常状态）
 - 未启用（本卡未使用 MVU） — 卡不带 MVU，PSIS 仍正常运行
 - 接管失败 — Mvu 60s 未就绪，面板会出现「超时手动接管」按钮
+
+---
+
+## 深度优化（SEM）
+
+中度接管启动后，命中率上限取决于 prompt 里有多少"伪稳态条目"被注入到 `at_depth_as_user` 等位置。这些条目内容本身每轮不变，但位置在 user 消息**之后**，user 输入一变整段被推到 miss 区，里面的稳定文本无法进 prefix。
+
+SEM 自动发现这些条目，让用户授权后迁移到 `before_character_definition + constant=true`，让稳定文本进 prefix 缓存。
+
+### 触发
+
+进卡 5 秒后，若 SEM 发现 ≥3 条候选会弹一次 info toast：
+
+```
+📦 深度优化发现 N 条稳态候选 entry，命中率可提升 ~X%。MVU 控制台 → 世界书优化
+```
+
+打开 `MVU 守护` 面板 → 滚到 `📦 世界书优化（SEM v4.9）` → 「🔍 扫描候选」
+
+### 候选筛选条件（全部满足才作候选）
+
+- 当前 enabled
+- `comment` 不以 `[CFS4_` 开头（CFS 自管 entry 不动）
+- `content.length ≥ 500` 字符
+- `position` 是 `at_depth_as_user / at_depth_as_assistant / at_depth_as_system / at_depth / 4`
+- 宏密度 `< 10/1k`（动态宏 `{{...}}`、EJS `<%...%>`、`getvar(...)`）
+
+### 推荐预勾选
+
+- 长度 `≥ 1000` 字符
+- 宏密度 `< 5/1k`
+
+可手动改勾选。点「⬆ 迁移选中」→ 二次确认 → 写入。
+
+### 回滚
+
+「📋 已迁移列表」→ 勾选行 → 「↩ 回滚选中」/「↩↩ 全部回滚」。SEM 记录原始 `position/role/constant/depth/order` 在浏览器 localStorage（key: `cfs_sem_migrations_v1`），跨 session 持久化。
+
+### 漂移检测
+
+`worldinfo_updated` 事件 + 1.5s 防抖。SEM 迁移条目若 `position` 被外部插件改回非 prefix → 弹一次 warn toast（每 uid 仅弹一次）+ 已迁移列表里整行红字 + 顶部红警告条 + 默认勾选漂移行。
+
+**不自动改回**。一键处理：「📋 已迁移列表」→「⚡ 重迁所有漂移 (N)」。
+
+### F12 API
+
+```js
+await window.CFS4.SEM.scanCandidates()          // 扫候选
+await window.CFS4.SEM.migrate(book, [uid, ...])  // 迁移
+await window.CFS4.SEM.rollback(book, [uid, ...]) // 回滚
+await window.CFS4.SEM.rollbackAll()              // 全部回滚
+await window.CFS4.SEM.remigrateDrifted()         // 重迁所有漂移
+await window.CFS4.SEM.listMigrated()             // 已迁移 + 漂移状态
+window.CFS4.SEM.hasMigrations()                  // 是否有迁移记录（同步）
+```
 
 ---
 
@@ -126,14 +182,15 @@ v4.x 用一条自管的 dynamic entry 替代它：
 
 ### 和 WM 共存
 
-WM 不识别 CFS 的命名前缀，会按通用规则改 entry 位置：
+**CFS 自管 entry**（`[CFS4_*]` 系列）：CFS 在 `worldinfo_updated` 事件触发后多窗口审计 + 每轮 `generate_before_combine_prompts` 钩内同步校对，能在 4 秒内把位置改回。WM 按一次「应用修复」会让命中率掉一轮，第二轮 audit 修完就回归。
 
-1. 把 SCHEMA entry 从 `pos=0` 改成 `pos=4`，1KB 内容被推到 chat 末尾 miss 区
-2. 把 DYNAMIC entry 从 `pos=4` 改成 `pos=0`，每轮 delta 把 prefix cache 打断
+**SEM 迁移 entry**（用户授权的角色卡 worldbook 条目）：
 
-CFS 在 `worldinfo_updated` 事件触发后 500ms / 1500ms / 4000ms 各扫一次，加上每轮 `generate_before_combine_prompts` 钩内同步校对，能在 4 秒内把位置改回。
+- v4.9.1 设计原则是「自动发现、人工确认、状态可见、操作可逆」，**audit 只告警不自动修复**
+- WM 把 SEM 迁移条目拉回 user@D0 → CFS 检测到漂移 → 弹一次 toast「⚠ 检测到有插件正在回拉深度优化的已迁移条目」 → 不自动改回
+- 用户在 MVU 控制台 → 📦 世界书优化 → 「📋 已迁移列表」看到漂移条目整行红字 → 点「⚡ 重迁所有漂移」一键修复
 
-WM 按一次「应用修复」会让命中率掉一轮，第二轮 audit 修完就回归。
+**v4.9 行为变化**：深度优化（SEM）启用时，浅度 Legacy「⚡⚡ 三大块全部归零」按钮自动暂停（UI 标灰 + 状态条显示 `⏸ 已暂停`），避免与稳定条目前置迁移产生目标冲突。全部回滚 SEM 后按钮自动恢复。
 
 ---
 
