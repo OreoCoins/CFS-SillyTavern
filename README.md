@@ -1,4 +1,25 @@
-# Cache-Friendly Scanner (CFS)
+# Cache-Friendly Scanner (CFS) · Solo 单脚本版
+
+> ### 🥵 想要更丝滑？试试 [**CFS Suite 套餐版**](https://github.com/OreoCoins/CFS-Suite)
+>
+> CFS Suite = CFS Solo（本仓全套功能）+ **bundled MVU fork（DeepSeek V4 协议适配）** + 浮动胶囊 UI，
+> ST 原生扩展一装即用，不依赖酒馆助手。**强制接管 `window.Mvu`**，silent 模式。
+>
+> | | **CFS Solo（本仓）** | [CFS Suite](https://github.com/OreoCoins/CFS-Suite) |
+> |---|---|---|
+> | 安装 | 酒馆助手脚本库 | ST 原生扩展（git URL） |
+> | 包含 MVU | ❌（依赖你装的 MVU） | ✅ fork + DS V4 适配 + 6 项改动 |
+> | 接管 `window.Mvu` | ❌ | ✅（silent，不可绕过） |
+> | UI | 「🛡️ MVU 守护」按钮（聊天框旁） | 浮动胶囊（拖拽 + 持久化日志） + v3 按钮 |
+> | DeepSeek V4 | ⚠️ MVU 上游停更 46 天，DS V4 协议要自己绕 | ✅ json_object + tool_choice=auto + parser 救命 |
+> | 适用 | 不用 MVU / 想自管 MVU / 配酒馆助手生态 | 用 MVU + 想要丝滑 + 用 DS V4 |
+>
+> **何时该升级**：①遇到 DS V4 `Bad Request 400`（`json_schema` 拒绝）②想脱离酒馆助手 ③想要更丝滑的 UI
+> **何时留在 Solo**：①已熟悉酒馆助手脚本生态 ②不用 MVU ③偏好已稳态的 v4.9.1
+>
+> 两者**不可同装**（双触发 audit）。详细对比 + 升级指引见 [CFS Suite README](https://github.com/OreoCoins/CFS-Suite#与-cfs-solo-的关系)。
+
+---
 
 SillyTavern 用的 prompt cache 优化脚本。三层分级优化：
 
